@@ -18,14 +18,28 @@ $groups = array();
 $sockets = array();
 $master;
 
+class message{
+	public $mess;
+	public $type;
+	public $time;
+	public $group;
+	
+	__construct($type,$client,$msg,$reciver){
+		$this->mess = $msg;
+		$this->type = $type;
+		$this->time = now();
+		$this->groupe = $reciver->name;
+	}
+}
+
 class User{
-	var $socket;
-	var $name;
-	var $status;
-	var $rights;
-	var $invites = array();
-	var $ip;
-	var $active_group;
+	public $socket;
+	public $name;
+	public $status;
+	public $rights;
+	public $invites = array();
+	public $ip;
+	public $active_group;
 }
 /*
 status
@@ -37,8 +51,8 @@ status
 	5 = offline
 */
 class member{
-	var $rights;
-	var $socket;
+	public $rights;
+	public $socket;
 
 	function __construct($client){
 		$this->socket = $client->socket;
@@ -46,10 +60,10 @@ class member{
 	}
 }
 class Group{
-	var $port;#?
-	var $name;
-	var $members = array();
-	var $task;
+	public $port;#?
+	public $name;
+	public $members = array();
+	public $task;
 }
 
 include ROOT_DIR.'\\main\\connection.php';
