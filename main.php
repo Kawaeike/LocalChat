@@ -27,7 +27,7 @@ class message{
 	__construct($type,$client,$msg,$reciver){
 		$this->mess = $msg;
 		$this->type = $type;
-		$this->time = now();
+		$this->time = date('H:i:s');
 		$this->groupe = $reciver->name;
 	}
 }
