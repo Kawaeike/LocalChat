@@ -74,9 +74,28 @@ include ROOT_DIR.'\\main\\commands.php';
 
 echo "[main]Main directories included\n";
 
-//include ROOT_DIR.\\battelship\\main.php
 
-echo "[main]Games directories included\n";
+foreach(new DirectoryIterator(".\\modules") as $datei)
+{
+	if($datei->isDir())
+	{
+		echo "[main]loading ". $datei->getFilename() ."...   ";
+		
+		
+		$json = file_get_contents(".\\modules\\". $datei->getFilename() ."\\config.json");
+		
+		if(NULL != json_decode($json);)
+		{
+			include("\\modules\\". $datei->getFilename() ."\\". $datei->getFilename() .".php");
+		}
+		else
+		{
+			echo "failed no or invalid JSON"
+		}
+	}
+}
+
+echo "[main]Modules included\n";
 
 echo "[main]Starting chat server on port: ".$port.".\n";
 
