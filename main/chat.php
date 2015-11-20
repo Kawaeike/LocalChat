@@ -67,12 +67,18 @@ class chat{
 	}
 
 	public static function send_msg($client,$msg,$reciver){
-
 		if(DEBUG){echo "send_msg\n";}
 		$messobj = new message("message",$client,$msg,$reciver);
 		$msg = json_encode($messobj);
 		
 		#$msg = '{"mess":{"time":"'. date('H:i:s') .'","group":"'. $client->active_group .'","sender":"'. $client->name .'","message":"'. $msg .'"}}';
+		$msg = other::encoded($msg);
+		socket_write($reciver->socket,$msg,strlen($msg));
+	}
+	public static function send_command($client,$msg,$reciver){
+		if(DEBUG){echo "send_command\n";}
+		$messobj = new message("command",$client,$msg,$reciver);
+		$msg = json_encode($messobj);
 		$msg = other::encoded($msg);
 		socket_write($reciver->socket,$msg,strlen($msg));
 	}
