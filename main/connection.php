@@ -3,8 +3,8 @@ if (!defined('ROOT_DIR')) {die("Nop");}
 
 class connection{
 
-	public static function WebSocket($address = "localhost",$port){
-
+	public static function WebSocket($port){
+	$address = SERVER_IP;
 		if(DEBUG){echo "WebSocket\n";}
 		$master=socket_create(AF_INET, SOCK_STREAM, SOL_TCP)		or connection::logdie("socket_create() failed");
 		socket_set_option($master, SOL_SOCKET, SO_REUSEADDR, 1)		or connection::logdie("socket_option() failed");
@@ -12,39 +12,24 @@ class connection{
 		socket_listen($master,20)									or connection::logdie("socket_listen() failed");
 		connection::logm("Server Started : ".date("Y-m-d H:i:s")."\n");
 		connection::logm("Master socket  : ".$master."\n");
-		connection::logm("Listening on   : ".$address." port ".$port."\n\n");
+		connection::logm("Listening on   : ".$address.":".$port."\n\n");
 		return $master;
 	}
 
 	public static function connect($socket){
 
 		if(DEBUG){echo "connect\n";}
-		socket_getpeername ($socket,$ip);
+		socket_getpeername($socket,$ip);
 		connection::logm("connect ". $socket ."\n");
 		global $sockets,$users;
 		$user = new User();
-		socket_getpeername ($socket,$ip);
+		socket_getpeername($socket,$ip);
 		$user->ip = $ip;
 		$user->socket = $socket;
 		$user->rights = 100;
 		$user->status = 0;
 		array_push($users,$user);
 		array_push($sockets,$socket);
-	}
-
-	public static function disconnect($client){
-
-		global $sockets;
-		if(DEBUG){echo "disconnect\n";}
-		echo "disconnect ". $client->socket ."|\"". $client->name ."\"\n";
-		$client->status = 5;
-		for($i = 0;count($sockets) > $i;$i++) {
-			if($client->socket == $sockets[$i]){
-				unset($sockets[$i]);
-			}
-		}
-		socket_close($client->socket);
-		$client->socket = NULL;
 	}
 
 	public static function dohandshake($client,$buffer){
@@ -73,12 +58,35 @@ class connection{
 		return array($r,$h,$o,$key1);
 	}
 
+	public static function disconnect($client){
+
+		global $sockets,$groups;
+		if(DEBUG){echo "disconnect\n";}
+		echo "disconnect ". $client->socket ."|\"". $client->name ."\"\n";
+		$client->status = 5;
+		foreach ($sockets as $i => $socket) {
+			if($client->socket == $socket){
+				unset($sockets[$i]);
+			}
+		}
+		foreach ($client->groups as $key => $group) {
+			$groupmember = select::receivers($group);
+			foreach ($groupmember as $i => $member) {
+				if($member->socket == $client->socket){
+					unset($groupmember[$i]);
+				}
+			}
+		}
+		socket_close($client->socket);
+		$client->socket = NULL;
+	}
+
 	public static function login($client,$msg){
 	global $server,$groups,$users;
 		if(DEBUG){echo "login\n";}
 		$temp = explode(" ",$msg);
 		if($temp[0] == "!login"){
-			if($client->ip == "127.0.0.1")#admin
+			if($client->ip == SERVER_IP)#admin
 			{
 				$client->name = "Admin";
 				$client->status = 3;
@@ -87,6 +95,7 @@ class connection{
 				$group = select::receivers($client->active_group);
 
 				array_push($group->members,new member($client));
+				array_push($client->groups,$client->active_group);
 				array_push($users,$client);
 
 				chat::send_msg($server,"Success",$client);
@@ -101,6 +110,7 @@ class connection{
 						$group = select::receivers($client->active_group);
 
 						array_push($group->members,new member($client));
+						array_push($client->groups,$client->active_group);
 						array_push($users,$client);
 
 						chat::send_msg($server,"Success",$client);

@@ -1,0 +1,6 @@
+
+RewriteEngine On
+
+DirectoryIndex client.php
+
+RewriteRule ^js/(.*)\.js$ js/$1.js.php

@@ -4,8 +4,8 @@
 	<link rel="stylesheet" href="style/main.css">
 
 	<script src="js/jquery.js"></script>
+	<script src="js/angular.min.js"></script>
 	<script src="js/main.js"></script>
-
 
 <?php
 	
@@ -25,9 +25,9 @@ else
 ?>
 	</head>
 	<body>
-		<div id="header"><div>
+		<div id="header"><div ng-app=""></div></div>
 		<div id="chat">
-			<div id="chatMsg"> </div>
+			<div id="chatMsg"></div>
 			<div id="input">
 				<input id="msg" type="text"/>
 				<button onclick="send()">Send</button>
@@ -45,9 +45,6 @@ else
 				</table>
 			</div>
 			<div id="help"><a href="help.php">Commands und Rechte</a></div>
-		</div>
-		<div id="gamediv">
-			<iframe id="game"></iframe>
-		 </div>
+		</div id="modules">
 	</body>
 </html>

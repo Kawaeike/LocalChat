@@ -1,30 +1,82 @@
 <?php
 if (!defined('ROOT_DIR')) {die("Nop");}
 
-class command{
+class commands{
 
-	public function command($msg,$user){
+	public static function command($msg,$user){
 
+		$returnmsg = "";
 		$msg = substr($msg, 1);
 		$command = explode(' ',$msg);
-		logm("command:". $command[0] ."|rechte [". $user->rights ."]\n");
-		logm("target:". $command[1] ."\n");
+		commands::logm("command:". $command[0] ."|rechte [". $user->rights ."]\n");
 
 		
-		switch ([ $command[0], $user->rights])
+		switch ($command[0])
 		{
-			case ["COMMAND", rights]:
+			case "invite":
 
 			break;
+			case "join":
+
+			break;
+			case "leave":
+
+			break;
+			case "rights":
+
+			break;
+			case "group":
+
+			break;
+			case "eval":
+				if($user->rights >= 10000000){
+					global $sockets,$users,$groups,$server;
+
+					ob_start();
+					eval($command[1].";");
+					$result = ob_get_clean();
+					$returnmsg = $result;
+				}
+				else{
+					$returnmsg = "Insufficient permissions!";
+				}
+			break;
+			case "kick":
+
+			break;
+			case "ban":
+
+			break;
+			case "shout":
+				if($user->rights > 100){
+
+				}
+				else{
+					$returnmsg = "Insufficient permissions!";
+				}
+			break;
+			case "w":
+				if(select::byname($command[1])){
+					$returnmsg = "You whispert to:". $command[1] ." ". $msg;
+				}
+				else{
+					$returnmsg = "User \"". $command[1] ."\" not found";
+				}
+			break;
+
+			default:
+				$returnmsg = "Command not found";
+			break;
 		}
+		return $returnmsg;
 	}
 
-	private function logm($logMsg){
+	private static function logm($logMsg){
 		if (OUTPUT) {
 			echo "[commands]".$logMsg;
 		}
 	} 
-	private function logdie($logMsg){
+	private static function logdie($logMsg){
 		die("[commands]".$logMsg);
 	}
 }

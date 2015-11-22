@@ -4,31 +4,58 @@ var blockMsg = [];
 var user = [];
 var name = "";
 var status = "";
+var heightnummber = 9999999999999
+
 
 
 function init(){
-	var host = "ws://localhost:12345/WS/server.php";
+	var host = "ws://"+"<?php echo getHostByName(getHostName()) ?>"+":12345/WS/server.php";
 	try{
 		socket = new WebSocket(host);
-		socket.onopen    = function(msg){if(status == "d"){info("Connected")} status="c"; console.log("Welcome"); };
-		socket.onmessage = function(msg){ split(msg) };
-		socket.onclose   = function(msg){if(status != "d"){error("Disconnected");} status="d"; reconnect(); };
+		socket.onopen = function(msg){
+			if(status != "c"){
+				info("Connected");
+			} 
+			status="c"; 
+			console.log("welcome"); 
+		};
+		socket.onmessage = function(msg){
+			split(msg)
+		};
+		socket.onclose = function(msg){
+			if(status != "d"){
+				error("Disconnenct");
+			}
+			status="d";
+			reconnect();
+		};
 	}
-	catch(ex){console.log(ex);}
+	catch(ex){console.log(ex); }
 }
 function reconnect()
 {
-	setTimeout(function(){init();},2000)
+	//setTimeout(function(){init();},2000)
 }
 
 function split(data)
 {
 	json = JSON.parse(data.data);
 	console.log(json)
-	if(typeof(json.mess) != 'undefined'){chat(json.mess);}
-	if(typeof(json.command) != 'undefined'){eval(json.command);}
-	if(typeof(json.user) != 'undefined'){users(json.user);}
-	if(typeof(json.game) != 'undefined'){game(json.game);}
+	if(json.type == "message"){
+		chat(json);
+	}
+	else if(json.type == "command"){
+		eval(json.data);
+	}
+	else if(json.type == "user"){
+		users(json);
+	}
+	else if(json.type == "module"){
+		module(json);
+	}
+	else{
+		console.log(json)
+	}
 }
 function users(user)
 {
@@ -55,19 +82,34 @@ function chat(mess)
 {
 	if(blockMsg.indexOf(mess.sender) == -1)
 	{
-		if (mess.message.match(/^!me /))
+		var bar = 0;
+		var tmp = $("#chatMsg").scrollTop();
+		$("#chatMsg").scrollTop(heightnummber);
+		var tmp2 = $("#chatMsg").scrollTop();
+		if(tmp2 == tmp){
+			bar = 1;
+		}
+		else
+		{
+			$("#chatMsg").scrollTop(tmp);
+		}
+		
+		if (mess.data.match(/^!me /))
 		{
 			var timestamp = '<span class="timestamp">'+mess.time+'|</span>';
 			var sender = '<span class="sender">['+mess.sender+']</span>';
-			var content = '<span class="me">'+mess.message+'</span>';
-			$("#chatMsg").append('<div class="msg">'+timestamp+sender+content+'</div>');
+			var content = '<span class="me">'+mess.data+'</span>';
+			$("#chatMsg").append('<div id="'+mess.id+'" class="msg">'+timestamp+sender+content+'</div>');
 		}
 		else
 		{
 			var timestamp = '<span class="timestamp">'+mess.time+'|</span>';
 			var sender = '<span class="sender">['+mess.sender+']</span>';
-			var content = '<span class="me">'+mess.message+'</span>';
-			$("#chatMsg").append('<div class="msg">'+timestamp+sender+content+'</div>');	
+			var content = '<span class="me">'+mess.data+'</span>';
+			$("#chatMsg").append('<div id="'+mess.id+'" class="msg">'+timestamp+sender+content+'</div>');	
+		}
+		if(bar == 1){
+			$("#chatMsg").scrollTop(heightnummber)
 		}
 	}
 }
@@ -83,7 +125,7 @@ function error(error)
 	var h = addZero(d.getHours());
 	var m = addZero(d.getMinutes());
 	var s = addZero(d.getSeconds());
-	var msg = '{"time":"'+h+":"+m+":"+s+'","sender":"ERROR","message":"'+error+'"}'
+	var msg = '{"data": "'+error+'", "type": "message", "time": "'+h+":"+m+":"+s+'", "group": "none", "sender":"ERROR" }';
 	msg = JSON.parse(msg);
 	chat(msg);
 }
@@ -93,11 +135,11 @@ function info(info)
 	var h = addZero(d.getHours());
 	var m = addZero(d.getMinutes());
 	var s = addZero(d.getSeconds());
-	var msg = '{"time":"'+h+":"+m+":"+s+'","sender":"INFO","message":"'+info+'"}'
-	msg = JSON.parse(msg);
+	var msg = '{"data": "'+info+'", "type": "message", "time": "'+h+":"+m+":"+s+'", "group": "none", "sender":"INFO" }';
+	var msg = JSON.parse(msg);
 	chat(msg);
 }
-function game(data)
+function module(data)
 {
 	window.parent.frames[0].frameElement.contentWindow.frame(data);
 }

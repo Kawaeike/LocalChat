@@ -4,16 +4,9 @@ title Server
 taskkill /F /IM php.exe
 cls
 :start
-SET version=3
-IF %version% == 2 (
-	C:\xampp\php\php.exe C:\xampp\htdocs\WS\server.php
-)
-IF %version% == 3 (
-	C:\xampp\php\php.exe C:\xampp\htdocs\WS\main.php
-)
-IF %version% == all (
-	C:\xampp\php\php.exe C:\xampp\htdocs\WS\main.php
-)
+
+C:\xampp\php\php.exe .\main.php
+
 
 
 echo \

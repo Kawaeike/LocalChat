@@ -3,7 +3,7 @@ if (!defined('ROOT_DIR')) {die("Nop");}
 
 class chat{
 
-	public function socket_server($port,$server_ip)
+	public function socket_server($port)
 	{
 		global $sockets,$groups,$master;
 
@@ -14,11 +14,10 @@ class chat{
 		$main->task = "chat";
 		array_push($groups,$main);
 
-		$master = connection::WebSocket($server_ip,$port);
+		$master = connection::WebSocket($port);
 		$sockets = array($master);
 
 		while(true){
-
 			$changed = $sockets;
 			$write = NULL;
 			$except = NULL;
@@ -68,10 +67,10 @@ class chat{
 
 	public static function send_msg($client,$msg,$reciver){
 		if(DEBUG){echo "send_msg\n";}
+
+		$msg = str_replace("\n","<br>",$msg);
 		$messobj = new message("message",$client,$msg,$reciver);
 		$msg = json_encode($messobj);
-		
-		#$msg = '{"mess":{"time":"'. date('H:i:s') .'","group":"'. $client->active_group .'","sender":"'. $client->name .'","message":"'. $msg .'"}}';
 		$msg = other::encoded($msg);
 		socket_write($reciver->socket,$msg,strlen($msg));
 	}
@@ -92,14 +91,17 @@ class chat{
 
 		$receivers = select::receivers($client->active_group);
 
-		if(substr($msg,0,1) == "!game"){
+		if(substr($msg,0,1) == "!module"){
 
 			$gamemode::run($msg,$client,$receivers);
 		}
 		else if(substr($msg,0,1) == "!"){
-			commands::command($msg,$client,$receivers);
+			$msg = commands::command($msg,$client,$receivers);
+			$receivers = array($client);
+			chat::send_msg($client,$msg,$client);
 		}
-		else{
+		else
+		{
 			chat::send($client,$msg,$receivers);
 		}
 	}
@@ -107,12 +109,14 @@ class chat{
 
 	public static function send($client,$msg,$receivers){
 
-		global $master;
-		if(DEBUG){echo "send\n";}
-		foreach ($receivers->members as $reciver) {
-			if ($reciver == $master){}
-			else{
-				chat::send_msg($client,$msg,$reciver);
+		if(!preg_match("/\A\s\z/",$msg)){
+			global $master;
+			if(DEBUG){echo "send\n";}
+			foreach ($receivers->members as $reciver) {
+				if ($reciver == $master){}
+				else{
+					chat::send_msg($client,$msg,$reciver);
+				}
 			}
 		}
 	}

@@ -10,25 +10,31 @@ $port = 12345;
 define("OUTPUT",true);
 define("DEBUG",false);
 
+
 //----------------------- start parameter
 
-$server_ip = getHostByName(getHostName());
+define("SERVER_IP",getHostByName(getHostName()));
 $users = array();
 $groups = array();
 $sockets = array();
 $master;
+$modules = array();
 
 class message{
-	public $mess;
+	public $data;
 	public $type;
 	public $time;
 	public $group;
+	public $id;
+	public $sender;
 	
-	__construct($type,$client,$msg,$reciver){
-		$this->mess = $msg;
+	function __construct($type,$client,$msg,$reciver){
+		$this->sender = $client->name;
+		$this->data = $msg;
 		$this->type = $type;
 		$this->time = date('H:i:s');
-		$this->groupe = $reciver->name;
+		$this->group = $client->active_group;
+		$this->id = substr(sha1($client->name . $this->data . $this->time),0,10);
 	}
 }
 
@@ -38,6 +44,7 @@ class User{
 	public $status;
 	public $rights;
 	public $invites = array();
+	public $groups = array();
 	public $ip;
 	public $active_group;
 }
@@ -60,53 +67,58 @@ class member{
 	}
 }
 class Group{
-	public $port;#?
+	#public $port;?
 	public $name;
 	public $members = array();
 	public $task;
 }
 
-include ROOT_DIR.'\\main\\connection.php';
-include ROOT_DIR.'\\main\\other.php';
-include ROOT_DIR.'\\main\\select.php';
-include ROOT_DIR.'\\main\\chat.php';
-include ROOT_DIR.'\\main\\commands.php';
+include_once(ROOT_DIR.'\\main\\connection.php');
+include_once(ROOT_DIR.'\\main\\other.php');
+include_once(ROOT_DIR.'\\main\\select.php');
+include_once(ROOT_DIR.'\\main\\chat.php');
+include_once(ROOT_DIR.'\\main\\commands.php');
 
 echo "[main]Main directories included\n";
+echo "[main]Including modules\n";
 
-
-foreach(new DirectoryIterator(".\\modules") as $datei)
+foreach(new DirectoryIterator(ROOT_DIR ."\\modules") as $datei)
 {
 	if($datei->isDir())
 	{
-		echo "[main]loading ". $datei->getFilename() ."...   ";
-		
-		
-		$json = file_get_contents(".\\modules\\". $datei->getFilename() ."\\config.json");
-		
-		if(NULL != json_decode($json);)
+		if($datei->getFilename() != "." && $datei->getFilename() != "..")
 		{
-			include("\\modules\\". $datei->getFilename() ."\\". $datei->getFilename() .".php");
-		}
-		else
-		{
-			echo "failed no or invalid JSON"
+			echo "[main]loading ". $datei->getFilename() ." ... ";
+		
+			$json = file_get_contents(ROOT_DIR ."\\modules\\". $datei->getFilename() ."\\config.json");
+		
+			if(NULL != json_decode($json))
+			{
+				if(include_once(ROOT_DIR ."\\modules\\". $datei->getFilename() ."\\". $datei->getFilename() .".php"))
+				{
+					echo "finish\n";
+					array_push($modules,$datei->getFilename());
+				}
+				/*
+				else if() check for lua files
+				*/
+				else
+				{
+					echo "failed no server side file\n";
+				}
+
+			}
+			else
+			{
+				echo "failed no or invalid JSON\n";
+			}
 		}
 	}
 }
 
 echo "[main]Modules included\n";
-
 echo "[main]Starting chat server on port: ".$port.".\n";
-
 echo "----------------------------------------------------------------------\n";
-
-/*
-	$client(Obj) sender off the message
-	$msg(str) message off the client
-	$reciver(arr) recivers off the message
-*/
-
 
 $chat = new chat;
 
@@ -116,11 +128,9 @@ $chat = new chat;
 	$server->status = 3;
 	array_push($users,$server);
 
-	$chat->socket_server($port,$server_ip);
+	$chat->socket_server($port);
 
-
-
-echo "ende"
+echo "ende";
 
 ?>
 
