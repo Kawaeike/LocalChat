@@ -1,11 +1,14 @@
 @echo off
+::set your PHP Path
+SET PHPpath=C:\xampp\php\
+
 taskkill /F /FI "WINDOWTITLE eq Server"
 title Server
 taskkill /F /IM php.exe
 cls
 :start
 
-C:\xampp\php\php.exe .\main.php
+%PHPpath%php.exe .\main.php
 
 
 
