@@ -5,6 +5,8 @@ var user = [];
 var name = "";
 var status = "";
 var heightnummber = 9999999999999
+var run_modules = [];
+var module_nummber = 0;
 
 
 
@@ -16,15 +18,14 @@ function init(){
 			if(status != "c"){
 				info("Connected");
 			} 
-			status="c"; 
-			console.log("welcome"); 
+			status="c";
 		};
 		socket.onmessage = function(msg){
 			split(msg)
 		};
 		socket.onclose = function(msg){
 			if(status != "d"){
-				error("Disconnenct");
+				error("Disconnect");
 			}
 			status="d";
 			reconnect();
@@ -34,14 +35,13 @@ function init(){
 }
 function reconnect()
 {
-	//setTimeout(function(){init();},2000)
+	setTimeout(function(){init();},2000);
 }
 
 function split(data)
 {
 	json = JSON.parse(data.data);
-	console.log(json)
-	if(json.type == "message"){
+	if(json.type == "mess"){
 		chat(json);
 	}
 	else if(json.type == "command"){
@@ -50,7 +50,7 @@ function split(data)
 	else if(json.type == "user"){
 		users(json);
 	}
-	else if(json.type == "module"){
+	else if(json.type == "data"){
 		module(json);
 	}
 	else{
@@ -139,9 +139,36 @@ function info(info)
 	var msg = JSON.parse(msg);
 	chat(msg);
 }
-function module(data)
+function module(module_data)
 {
-	window.parent.frames[0].frameElement.contentWindow.frame(data);
+	if(typeof run_modules[module_data.data.id] == 'undefined'){
+		
+		run_modules[module_data.data.id] = module_nummber;
+		module_nummber++;
+		style = "height:"+module_data.data.size.height+"; width:"+module_data.data.size.width;
+		src = "http://<?php echo getHostByName(getHostName()) ?>/localchat/modules/"+module_data.data.name+"/"+module_data.data.files.client;
+		$("#modules").append('<iframe border="0" src="'+ src +'" id="'+ module_data.id +'" style="'+ style +'" > </iframe>');
+		setTimeout(function(){
+			window.parent.frames[run_modules[module_data.data.id]].frameElement.contentWindow.socketrecive('{"type":"set_m_id","value":"'+module_data.data.id+'"}');
+		},5000)
+		
+	}
+	else{
+		window.parent.frames[run_modules[module_data.data.id]].frameElement.contentWindow.socketrecive(module_data);
+	}
+}
+function modulerecive(data){
+
+	console.log(data)
+
+
+		if(socket.readyState == 1){
+			try{ socket.send(data); } catch(ex){ error(ex); }
+		}
+		else{
+			error("Socket is not open")
+		}
+	
 }
 
 function send(){
@@ -197,13 +224,16 @@ function commands(com){
 	}
 
 }
+function load_module(module_name,data)
+{
+
+}
 
 
-$(document).ready(function() {
+$(document).ready(function(){
 	$("#msg").focus();
 	init();
-	$(document).keypress(function(e)
-	{
+	$(document).keypress(function(e){
 		if(e.which == 13)
 		{
 			send();
@@ -213,3 +243,19 @@ $(document).ready(function() {
 $(window).unload(function() {
 	socket.close();
 });
+function auto_command(elm){
+		id = $(elm).attr("id")
+		val = $(elm).text();
+		part = $(elm).parent(".me").text().split("[");
+		part = part[0].split(" ");
+		part = part[part.length-1]
+		if(val == "accept"){
+			msg = "!accept "+id;
+			$(elm).parent(".me").text("you accepted the invite to "+part);
+		}
+		else{
+			msg = "!reject "+id;
+			$(elm).parent(".me").text("you rejected the invite to "+part);
+		}
+		try{ socket.send(msg); } catch(ex){ error(ex); }
+}
